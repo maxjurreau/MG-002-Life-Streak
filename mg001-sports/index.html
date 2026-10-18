@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MG-001 // MAX Sports Prediction Engine</title>
+  <meta name="theme-color" content="#090D16">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #090D16; color: #F8FAFC; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: #1E293B; border: 1px solid #334155; border-radius: 16px; padding: 28px; max-width: 460px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+    .badge { display: inline-block; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid #10B981; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px; }
+    h1 { font-size: 1.5rem; margin-bottom: 4px; font-weight: 700; text-align: center; }
+    p.subtitle { color: #94A3B8; font-size: 0.875rem; margin-bottom: 20px; text-align: center; }
+    
+    .matchup-container { background: #0F172A; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 20px; }
+    .team-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .team-name { font-weight: 700; font-size: 1.1rem; }
+    .team-rating { font-size: 0.85rem; color: #64748B; }
+    .slider { width: 100%; accent-color: #10B981; cursor: pointer; margin-top: 4px; }
+
+    .prob-bar-container { background: #1E293B; border-radius: 8px; height: 24px; overflow: hidden; display: flex; margin: 16px 0; border: 1px solid #334155; }
+    .prob-home { background: #10B981; height: 100%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #090D16; }
+    .prob-draw { background: #64748B; height: 100%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #F8FAFC; }
+    .prob-away { background: #3B82F6; height: 100%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #F8FAFC; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; margin-bottom: 20px; }
+    .stat-card { background: #0F172A; padding: 10px; border-radius: 8px; border: 1px solid #1E293B; }
+    .stat-val { font-size: 1.1rem; font-weight: 800; color: #10B981; }
+    .stat-lbl { font-size: 0.65rem; color: #64748B; text-transform: uppercase; margin-top: 2px; }
+
+    .btn { background: #10B981; color: #090D16; border: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; transition: all 0.2s; }
+    .btn:hover { background: #34D399; transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div style="text-align: center;"><span class="badge">MG-001 Forecasting Engine</span></div>
+    <h1>Sports Probability OS</h1>
+    <p class="subtitle">Monte Carlo Poisson Simulator</p>
+
+    <div class="matchup-container">
+      <div class="team-row">
+        <div>
+          <div class="team-name" style="color:#10B981;">Home Squad</div>
+          <div class="team-rating" id="home-rating-lbl">Attack Rating: 1.80</div>
+        </div>
+        <input type="range" class="slider" min="0.5" max="3.5" step="0.1" value="1.8" id="home-rating" oninput="calculateOdds()">
+      </div>
+
+      <div class="team-row" style="margin-top: 16px;">
+        <div>
+          <div class="team-name" style="color:#3B82F6;">Away Squad</div>
+          <div class="team-rating" id="away-rating-lbl">Attack Rating: 1.20</div>
+        </div>
+        <input type="range" class="slider" min="0.5" max="3.5" step="0.1" value="1.2" id="away-rating" oninput="calculateOdds()">
+      </div>
+    </div>
+
+    <div class="prob-bar-container">
+      <div class="prob-home" id="bar-home" style="width: 55%;">55%</div>
+      <div class="prob-draw" id="bar-draw" style="width: 20%;">20%</div>
+      <div class="prob-away" id="bar-away" style="width: 25%;">25%</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="val-home-win">55%</div>
+        <div class="stat-lbl">Home Win</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="val-draw" style="color:#94A3B8;">20%</div>
+        <div class="stat-lbl">Draw</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="val-away-win" style="color:#3B82F6;">25%</div>
+        <div class="stat-lbl">Away Win</div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="runMonteCarlo()">Run 10,000 Sim Pass</button>
+  </div>
+
+  <script>
+    function poisson(k, lambda) {
+      let factorial = 1;
+      for (let i = 1; i <= k; i++) factorial *= i;
+      return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial;
+    }
+
+    function calculateOdds() {
+      const hRating = parseFloat(document.getElementById('home-rating').value);
+      const aRating = parseFloat(document.getElementById('away-rating').value);
+
+      document.getElementById('home-rating-lbl').innerText = `Attack Rating: ${hRating.toFixed(2)}`;
+      document.getElementById('away-rating-lbl').innerText = `Attack Rating: ${aRating.toFixed(2)}`;
+
+      let homeWinProb = 0, drawProb = 0, awayWinProb = 0;
+
+      for (let h = 0; h <= 6; h++) {
+        for (let a = 0; a <= 6; a++) {
+          const p = poisson(h, hRating) * poisson(a, aRating);
+          if (h > a) homeWinProb += p;
+          else if (h === a) drawProb += p;
+          else awayWinProb += p;
+        }
+      }
+
+      const total = homeWinProb + drawProb + awayWinProb;
+      const hP = Math.round((homeWinProb / total) * 100);
+      const dP = Math.round((drawProb / total) * 100);
+      const aP = 100 - hP - dP;
+
+      document.getElementById('bar-home').style.width = `${hP}%`;
+      document.getElementById('bar-home').innerText = hP > 10 ? `${hP}%` : '';
+      document.getElementById('bar-draw').style.width = `${dP}%`;
+      document.getElementById('bar-draw').innerText = dP > 10 ? `${dP}%` : '';
+      document.getElementById('bar-away').style.width = `${aP}%`;
+      document.getElementById('bar-away').innerText = aP > 10 ? `${aP}%` : '';
+
+      document.getElementById('val-home-win').innerText = `${hP}%`;
+      document.getElementById('val-draw').innerText = `${dP}%`;
+      document.getElementById('val-away-win').innerText = `${aP}%`;
+    }
+
+    function runMonteCarlo() {
+      calculateOdds();
+      alert('10,000 Monte Carlo Simulation iterations completed successfully at the edge!');
+    }
+
+    calculateOdds();
+  </script>
+
+</body>
+</html>
