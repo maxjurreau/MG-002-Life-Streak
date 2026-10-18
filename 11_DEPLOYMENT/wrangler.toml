@@ -1,0 +1,12 @@
+# 11_DEPLOYMENT/wrangler.toml
+name = "mg002-life-streak"
+compatibility_date = "2026-10-18"
+pages_build_output_dir = "../06_FRONTEND/build/web"
+
+[env.production]
+name = "mg002-life-streak-prod"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mg002-d1-prod"
+database_id = "mg002-d1-prod-placeholder-id"
